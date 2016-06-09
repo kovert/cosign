@@ -22,7 +22,7 @@
 #include "factor.h"
 
     int
-execfactor( struct factorlist *fl, struct cgi_list cl[], char **msg )
+execfactor( struct factorlist *fl, struct exitcodelist *ecl, struct cgi_list cl[], char **msg )
 {
     int			fd0[ 2 ], fd1[ 2 ], i, status;
     pid_t		pid;
@@ -30,6 +30,7 @@ execfactor( struct factorlist *fl, struct cgi_list cl[], char **msg )
     struct timeval	tv;
     char		**ff, *line;
     static char		prev[ 1024 ];
+    struct exitcodelist *e;
 
     *msg = NULL;
 
@@ -122,6 +123,16 @@ execfactor( struct factorlist *fl, struct cgi_list cl[], char **msg )
 	    *msg = prev;
 	    return( 2 );
 	default :
+	    /*
+	     * See if there's an exit code set to force a redirect, if its not
+	     * in the list, then consider it an error.
+	     */
+	    for(e = ecl; e; e = e->ec_next) {
+	        if( WEXITSTATUS( status ) == e->ec_code) {
+	            *msg = prev;
+	            return( e->ec_code );
+		}
+	    }
 	    fprintf( stderr, "factor %s exited with %d\n", fl->fl_path,
 		    WEXITSTATUS( status ));
 	    exit( 1 );

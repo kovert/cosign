@@ -37,6 +37,7 @@ extern char	*cosign_version;
 extern char	*suffix;
 extern int	errno;
 extern struct factorlist	*factorlist;
+extern struct exitcodelist	*exitcodelist;
 unsigned short	cosign_port;
 char		*cosign_host = _COSIGN_HOST;
 char 		*cosign_conf = _COSIGN_CONF;
@@ -49,6 +50,8 @@ char		*loop_page = _COSIGN_LOOP_URL;
 int		krbtkts = 0;
 int		httponly_cookies = 0;
 SSL_CTX 	*ctx = NULL;
+
+int             useinternalauth = 1;
 
 char			*new_factors[ COSIGN_MAXFACTORS ];
 char			*script;
@@ -288,6 +291,7 @@ main( int argc, char *argv[] )
     char			**ff, *msg = NULL;
     struct servicelist		*scookie = NULL;
     struct factorlist		*fl;
+    struct exitcodelist		*e;
     struct timeval		tv;
     struct connlist		*head;
     char			matchbuf[ 1024 ];
@@ -818,13 +822,22 @@ loggedin:
 		    " before secondary authentication.";
 	    goto loginscreen;
 	}
-	if (( rc = execfactor( fl, cl, &msg )) != COSIGN_CGI_OK ) {
+	if (( rc = execfactor( fl, exitcodelist, cl, &msg )) != COSIGN_CGI_OK ) {
 	    sl[ SL_ERROR ].sl_data = msg;
             if ( rc == COSIGN_CGI_PASSWORD_EXPIRED ) {
 	        sl[ SL_TITLE ].sl_data = "Password Expired";
                 subfile( EXPIRED_ERROR_HTML, sl, 0 );
                 exit( 0 );
             } else {
+                for(e = exitcodelist; e; e = e->ec_next) {
+                    if(rc == e->ec_code) {
+                        qs = getenv( "QUERY_STRING" );
+                        if(!qs)
+                            qs = "";
+	                printf( "Location: %s?%s\n\n", e->ec_url, qs);
+                        exit(0);
+                    }
+                }
 	        sl[ SL_TITLE ].sl_data = "Authentication Required";
             }
 	    continue;
