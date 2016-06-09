@@ -34,6 +34,7 @@ struct cosigncfg {
 
 static struct authlist		*authlist = NULL, *new_authlist;
 struct factorlist	 	*factorlist = NULL;
+struct exitcodelist	 	*exitcodelist = NULL;
 static struct servicelist	*servicelist = NULL, *new_servicelist;;
 static struct matchlist		*certlist = NULL;
 static struct matchlist		*negotiatemap = NULL;
@@ -453,6 +454,7 @@ read_config( char *path )
     struct servicelist	*sl_new, **sl_cur;
     struct matchlist	*cl_new, **cl_cur;
     struct factorlist	*fl_new, **fl_cur;
+    struct exitcodelist	*ec_new, **ec_cur;
 
     if (( sn = snet_open( path, O_RDONLY, 0, 0 )) == NULL ) {
 	perror( path );
@@ -704,7 +706,36 @@ read_config( char *path )
 
 	    fl_new->fl_next = *fl_cur;
 	    *fl_cur = fl_new;
+	} else if ( strcmp( av[ 0 ], "factorexitredirect" ) == 0 ) {
+	    if ( ac !=  3 ) {
+		fprintf( stderr, "line %d:"
+			" keyword factorexitredirect takes exactly 2 args\n",
+			linenum );
+		return( -1 );
+	    }
 
+	    if (( ec_new = malloc( sizeof( struct exitcodelist ))) == NULL ) {
+		perror( "malloc" );
+		return( -1 );
+	    }
+	    ec_new->ec_code = atoi( av[1] );
+	    if(ec_new->ec_code < 10) {
+		fprintf( stderr, "line %d:"
+			" exit code %d not a number or < 10\n",
+			linenum, ec_new->ec_code );
+		return( -1 );
+	    }
+	    if (( ec_new->ec_url = strdup( av[ 2 ] )) == NULL ) {
+		perror( "malloc" );
+		return( -1 );
+	    }
+
+	    for ( ec_cur = &exitcodelist; (*ec_cur) != NULL;
+		    ec_cur = &(*ec_cur)->ec_next )
+		;
+
+	    ec_new->ec_next = *ec_cur;
+	    *ec_cur = ec_new;
 	} else if ( strcmp( av[ 0 ], "suffix" ) == 0 ) {
 	    if ( ac != 2 ) {
 		fprintf( stderr, "line %d: keyword suffix takes 1 arg\n",

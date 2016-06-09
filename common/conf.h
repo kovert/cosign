@@ -44,6 +44,13 @@ struct factorlist {
     struct factorlist	*fl_next;
 };
 
+struct exitcodelist {
+    char		*ec_path;
+    int			ec_code;
+    char		*ec_url;
+    struct exitcodelist	*ec_next;
+};
+
 struct proxies {
     char		*pr_hostname;
     char		*pr_cookie;
@@ -79,6 +86,7 @@ struct matchlist {
 #define COSIGNKRBTKTSKEY	"cosignkrbtkts"
 #define COSIGNDBHASHLENKEY	"cosigndbhashlen"
 #define COSIGNSTRICTCHECKKEY	"cosignstrictcheck"
+#define COSIGNINTERNALAUTH      "cosigninternalauth"
 #define COSIGNHTTPONLYCOOKIESKEY	"cosignhttponlycookies"
 
 #ifdef SQL_FRIEND
