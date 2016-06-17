@@ -829,20 +829,25 @@ loggedin:
                 subfile( EXPIRED_ERROR_HTML, sl, 0 );
                 exit( 0 );
             } else {
-                for(e = exitcodelist; e; e = e->ec_next) {
-                    if(rc == e->ec_code) {
-                        qs = getenv( "QUERY_STRING" );
-                        if(!qs)
-                            qs = "";
-	                printf( "Location: %s?%s\n\n", e->ec_url, qs);
-                        exit(0);
-                    }
+                for(ec = exitcodelist; ec; e = ec->ec_next) {
+                      /*
+                       * pass along the extrta bits to allow the url that
+                       * is redirected to to be able to send the user back
+                       * to the beginning again if its so inclined.
+                       */
+                      if(service && ref) {
+                              printf( "Location: %s?%s&%s\n\n", e->ec_url,
+                                      service, ref);
+                      } else {
+                              printf( "Location: %s?%s\n\n", e->ec_url, qs);
+                      }
                 }
 	        sl[ SL_TITLE ].sl_data = "Authentication Required";
             }
 	    continue;
 	}
 
+needsredirect:
 	for ( i = 0; i < COSIGN_MAXFACTORS - 1; i++ ) {
 	    if ( new_factors[ i ] == NULL ) {
 		new_factors[ i ] = strdup( msg );
